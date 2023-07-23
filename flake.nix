@@ -17,34 +17,46 @@
         };
         stdenv_ = pkgs.llvmPackages_16.stdenv;
       in rec {
-          devShells.default = stdenv_.mkDerivation {
-            name = "lbfgs dev";
+        packages.default = stdenv_.mkDerivation {
+          name = "lbfgs";
+          src = self;
 
-            nativeBuildInputs = with pkgs; [
-              cmake
-              clang-tools_16
-              cppcheck
-              include-what-you-use
-              cmake-language-server
-            ];
+          cmakeFlags = [
+            "-DCMAKE_BUILD_TYPE=Release"
+            "-DCMAKE_CXX_FLAGS=-march=x86-64-v3"
+          ];
+          nativeBuildInputs = with pkgs; [
+            cmake
+          ];
 
-            buildInputs = with pkgs; [
-              bear
-              eigen
-              gdb
-              graphviz
-              hyperfine
-              linuxPackages_latest.perf
-              valgrind
-              ned14-outcome
-              ned14-quickcpplib
-              ned14-status-code
-              libnano
-            ];
+          buildInputs = with pkgs; [
+            eigen
+            ned14-outcome
+            ned14-quickcpplib
+            ned14-status-code
+          ];
+        };
 
-            shellHook = ''
-              alias bb="cmake --build build -j"
-            '';
-          };
+        devShells.default = stdenv_.mkDerivation {
+          name = "lbfgs dev";
+
+          nativeBuildInputs = packages.default.nativeBuildInputs ++ (with pkgs; [
+            clang-tools_16
+            cppcheck
+            include-what-you-use
+            cmake-language-server
+          ]);
+
+          buildInputs = packages.default.buildInputs ++ (with pkgs; [
+            gdb
+            linuxPackages_latest.perf
+            valgrind
+            libnano
+          ]);
+
+          shellHook = ''
+            alias bb="cmake --build build -j"
+          '';
+        };
       });
 }

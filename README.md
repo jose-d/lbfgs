@@ -14,3 +14,8 @@ This repository contains a C++20 port of the [Limited-memory BFGS](https://en.wi
 - no cancellation
 
 These will be addressed in the future.
+
+
+### Usage example
+
+The user must define a functor which computes the function and its gradient. Please have a look at https://github.com/foolnotion/lbfgs/blob/main/test/source/lbfgs_test.cpp

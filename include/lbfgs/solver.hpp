@@ -94,7 +94,7 @@ struct solver
     using scalar_t      = typename Functor::scalar_t;
     using vector_t      = Eigen::Matrix<scalar_t, -1, 1>;
     using vector_ref_t  = Eigen::Ref<vector_t>;
-    using vector_cref_t = Eigen::Ref<vector_t const> const;
+    using vector_cref_t = Eigen::Ref<vector_t const> const&;
     using matrix_t      = Eigen::Matrix<scalar_t, -1, -1>;
     
     explicit solver(Functor const& functor) : functor_(functor) {}

@@ -15,26 +15,26 @@ namespace lbfgs
 enum class solver_error
 {
     success,
-    uncharted,             // unexpected (unknown) error
-    invalid_n,             // invalid number of variables
-    invalid_memsize,       // solver::mem_size
-    invalid_gepsilon,      // solver::g_epsilon
-    invalid_testperiod,    // solver::past
-    invalid_delta,         // solver::delta
-    invalid_minstep,       // solver::min_step
-    invalid_maxstep,       // solver::max_step
-    invalid_fdeccoeff,     // solver::f_dec_coeff
-    invalid_scurvcoeff,    // solver::s_curv_coeff
-    invalid_machineprec,   // solver::machine_prec
-    invalid_maxlinesearch, // solver::max_linesearch
-    invalid_function_value,       // function value is NaN or Inf
-    min_step_too_small,    // line search step < solver::min_step
-    max_step_too_large,    // line search step > solver::max_step
-    max_line_search_iterations_reached,        // line search reaches the maximum, assumptions not satisfied or precision not achievable
-    max_solver_iterations_reached, // max number of iterations reached
-    width_too_small,       // relative search interval width is at least machine_prec
-    invalid_parameters,    // logic error (negative line-search step)
-    increase_gradient,     // the current search direction increases the cost function value
+    uncharted,                          // unexpected (unknown) error
+    invalid_n,                          // invalid number of variables
+    invalid_memsize,                    // solver::mem_size
+    invalid_gepsilon,                   // solver::g_epsilon
+    invalid_testperiod,                 // solver::past
+    invalid_delta,                      // solver::delta
+    invalid_minstep,                    // solver::min_step
+    invalid_maxstep,                    // solver::max_step
+    invalid_fdeccoeff,                  // solver::f_dec_coeff
+    invalid_scurvcoeff,                 // solver::s_curv_coeff
+    invalid_machineprec,                // solver::machine_prec
+    invalid_maxlinesearch,              // solver::max_linesearch
+    invalid_function_value,             // function value is NaN or Inf
+    min_step_too_small,                 // line search step < solver::min_step
+    max_step_too_large,                 // line search step > solver::max_step
+    max_line_search_iterations_reached, // line search reaches the maximum, assumptions not satisfied or precision not achievable
+    max_solver_iterations_reached,      // max number of iterations reached
+    width_too_small,                    // relative search interval width is at least machine_prec
+    invalid_parameters,                 // logic error (negative line-search step)
+    increase_gradient,                  // the current search direction increases the cost function value
 };
 
 // forward declaration

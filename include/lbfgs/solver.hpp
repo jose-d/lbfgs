@@ -5,8 +5,8 @@
 #include <concepts>
 #include <exception>
 #include <iostream>
-#include <ostream>
 #include <limits>
+#include <ostream>
 
 #include <outcome.hpp>
 
@@ -20,84 +20,97 @@ namespace lbfgs
 
 namespace outcome = outcome_v2;
 
-namespace detail 
+namespace detail
 {
-    template<typename T>
-    using vector_t = Eigen::Matrix<T, -1, 1>;
+template<typename T>
+using vector_t = Eigen::Matrix<T, -1, 1>;
 
-    template<typename T>
-    using matrix_t = Eigen::Matrix<T, -1, -1>;
+template<typename T>
+using matrix_t = Eigen::Matrix<T, -1, -1>;
 
-    template<typename T>
-    struct lbfgs_iter_state {
-        using scalar_t = T;
-        using vector_t = vector_t<T>; // NOLINT
+template<typename T>
+struct lbfgs_iter_state
+{
+    using scalar_t = T;
+    using vector_t = vector_t<T>;  // NOLINT
 
-        scalar_t f; // function value
-        vector_t x; // parameters
-        vector_t g; // gradient
+    scalar_t f;  // function value
+    vector_t x;  // parameters
+    vector_t g;  // gradient
 
-        lbfgs_iter_state() = default;
+    lbfgs_iter_state() = default;
 
-        explicit lbfgs_iter_state(int64_t n, T v = std::numeric_limits<T>::quiet_NaN())
-            : f(v)
-        {
-            x.resize(n);
-            g.resize(n);
-        }
+    explicit lbfgs_iter_state(int64_t n, T v = std::numeric_limits<T>::quiet_NaN())
+        : f {v}
+        , x {vector_t(n)}
+        , g {vector_t(n)}
+    {
+    }
 
-        template<typename Functor>
-        auto update(Functor const& functor, vector_t x_new) {
-            x = std::move(x_new);
-            f = functor(x, g); 
-        }
+    template<typename Functor>
+    auto update(Functor const& functor, vector_t x_new)
+    {
+        x = std::move(x_new);
+        f = functor(x, g);
+    }
 
-        auto xnorm_inf() const { return x.cwiseAbs().maxCoeff(); }
-        auto gnorm_inf() const { return g.cwiseAbs().maxCoeff(); }
+    template<typename Functor>
+    auto update_with_gradient(Functor const& functor, vector_t x_new)
+    {
+        x = std::move(x_new);
+        f = functor(x, g);
+    }
 
-        auto converged(scalar_t eps) const {
-            return gnorm_inf() / std::max(scalar_t{1.0}, xnorm_inf()) <= eps;
-        }
+    auto xnorm_inf() const { return x.cwiseAbs().maxCoeff(); }
+    auto gnorm_inf() const { return g.cwiseAbs().maxCoeff(); }
 
-        friend auto operator<<(std::ostream& os, lbfgs_iter_state const& state) -> std::ostream& {
-            os << "f = " << state.f << "\n"
-               << "x = " << state.x.transpose() << "\n"
-               << "g = " << state.g.transpose();
-            return os;
-        }
-    };
+    auto converged(scalar_t eps) const { return gnorm_inf() / std::max(scalar_t {1.0}, xnorm_inf()) <= eps; }
 
-    template<typename T>
-    struct lbfgs_memory {
-        using vector_t = vector_t<T>; // NOLINT
-        using matrix_t = matrix_t<T>;
+    friend auto operator<<(std::ostream& os, lbfgs_iter_state const& state) -> std::ostream&
+    {
+        os << "f = " << state.f << "\n"
+           << "x = " << state.x.transpose() << "\n"
+           << "g = " << state.g.transpose();
+        return os;
+    }
+};
 
-        vector_t alpha;
-        matrix_t s;
-        matrix_t y;
-        vector_t ys;
+template<typename T>
+struct lbfgs_memory
+{
+    using vector_t = vector_t<T>;  // NOLINT
+    using matrix_t = matrix_t<T>;
 
-        lbfgs_memory() = default;
+    vector_t alpha;
+    matrix_t s;
+    matrix_t y;
+    vector_t ys;
 
-        lbfgs_memory(int64_t n, int64_t m)
-            : alpha(vector_t::Zero(m))
-            , s(matrix_t::Zero(n, m))
-            , y(matrix_t::Zero(n, m))
-            , ys(vector_t::Zero(m))
-        { }
-    };
-}  // namespace detail 
+    lbfgs_memory() = default;
+
+    lbfgs_memory(int64_t n, int64_t m)
+        : alpha(vector_t::Zero(m))
+        , s(matrix_t::Zero(n, m))
+        , y(matrix_t::Zero(n, m))
+        , ys(vector_t::Zero(m))
+    {
+    }
+};
+}  // namespace detail
 
 template<typename Functor>
 struct solver
 {
-    using scalar_t      = typename Functor::scalar_t;
-    using vector_t      = Eigen::Matrix<scalar_t, -1, 1>;
-    using vector_ref_t  = Eigen::Ref<vector_t>;
+    using scalar_t = typename Functor::scalar_t;
+    using vector_t = Eigen::Matrix<scalar_t, -1, 1>;
+    using vector_ref_t = Eigen::Ref<vector_t>;
     using vector_cref_t = Eigen::Ref<vector_t const> const&;
-    using matrix_t      = Eigen::Matrix<scalar_t, -1, -1>;
-    
-    explicit solver(Functor const& functor) : functor_(functor) {}
+    using matrix_t = Eigen::Matrix<scalar_t, -1, -1>;
+
+    explicit solver(Functor const& functor)
+        : functor_(functor)
+    {
+    }
 
     /**
      * The number of corrections to approximate the inverse hessian matrix.
@@ -227,19 +240,24 @@ struct solver
      *      via quasi-Newton methods. Mathematical Programming, Vol 141,
      *      No 1, pp. 135-163, 2013.
      */
-    auto line_search(scalar_t& step) const noexcept -> outcome::result<scalar_t> {
+    auto line_search(scalar_t& step) const noexcept -> outcome::result<scalar_t>
+    {
         /* Check the input parameters for errors. */
-        if (!(step > scalar_t{0.0})) { return solver_error::invalid_parameters; }
+        if (!(step > scalar_t {0.0})) {
+            return solver_error::invalid_parameters;
+        }
 
         /* Compute the initial gradient in the search direction. */
         auto dginit = prev_.g.dot(dir_);
         /* Make sure that s points to a descent direction. */
-        if (scalar_t{0.0} < dginit) { return solver_error::increase_gradient; }
+        if (scalar_t {0.0} < dginit) {
+            return solver_error::increase_gradient;
+        }
 
         // while (true)
         bool touched = false;
-        auto mu      = scalar_t{0.0};
-        auto nu      = max_step;
+        auto mu = scalar_t {0.0};
+        auto nu = max_step;
 
         auto finit = curr_.f;
         auto brackt = false;
@@ -274,17 +292,21 @@ struct solver
                 return solver_error::width_too_small;
             }
 
-            step = brackt ? scalar_t{0.5} * (mu + nu) : step * scalar_t{2.0};
+            step = brackt ? scalar_t {0.5} * (mu + nu) : step * scalar_t {2.0};
 
-            if (step < min_step) { return solver_error::min_step_too_small; } /* The step is the minimum value. */
+            if (step < min_step) {
+                return solver_error::min_step_too_small;
+            } /* The step is the minimum value. */
             if (step > max_step) {
-                if (touched) { return solver_error::max_step_too_large; } /* The step is the maximum value. */
+                if (touched) {
+                    return solver_error::max_step_too_large;
+                } /* The step is the maximum value. */
                 touched = true; /* The maximum value should be tried once. */
                 step = max_step;
             }
         }
 
-        return solver_error::success; // success
+        return solver_error::success;  // success
     }
 
     auto check_parameters() const noexcept -> solver_error
@@ -323,7 +345,8 @@ struct solver
         return solver_error::success;
     }
 
-    auto init(int n) const {
+    auto init(int n) const
+    {
         curr_ = detail::lbfgs_iter_state<scalar_t>(n);
         prev_ = curr_;
 
@@ -361,9 +384,6 @@ struct solver
         /*
         Make sure that the initial variables are not a stationary point.
         */
-        auto gnorm_inf = curr_.g.cwiseAbs().maxCoeff();
-        auto xnorm_inf = curr_.x.cwiseAbs().maxCoeff();
-
         if (curr_.converged(g_epsilon)) {
             /* The initial guess is already a stationary point. */
             return curr_.x;
@@ -376,16 +396,12 @@ struct solver
         auto end = 0;
         auto bound = 0;
 
-        int iter = 1;
         for (auto iter = 1;; ++iter) {
             /* Store the current position and gradient vectors. */
             prev_ = curr_;
 
             /* If the step bound can be provided dynamically, then apply it. */
-            auto step_min = min_step;
-            auto step_max = max_step;
-
-            step = step < step_max ? step : 0.5 * step_max;
+            step = step < max_step ? step : 0.5 * max_step;
 
             /* Search for an optimal step.
              * x is passed by reference and will be updated inside the function
@@ -393,7 +409,7 @@ struct solver
 
             if (auto res = line_search(step); res.error() != solver_error::success) {
                 /* Revert to the previous point. */
-                curr_ = prev_; 
+                std::swap(curr_, prev_);
                 break;
             }
 
@@ -403,9 +419,8 @@ struct solver
              * ||g(x)||_inf / max(1, ||x||_inf) < g_epsilon
              * */
             if (curr_.converged(g_epsilon)) {
-                /* Convergence. */
                 status.convergence = solver_convergence::converged;
-                status.final_cost  = curr_.f;
+                status.final_cost = curr_.f;
                 return curr_.x;
             }
 
@@ -422,7 +437,7 @@ struct solver
 
                     if (rate < delta) {
                         status.convergence = solver_convergence::stopped;
-                        status.final_cost  = curr_.f;
+                        status.final_cost = curr_.f;
                         return curr_.x;
                     }
                 }
@@ -526,12 +541,12 @@ struct solver
     auto previous_step_state() const { return prev_; }
 
 private:
-    std::reference_wrapper<Functor const> functor_;   // the function to be minimized
-    mutable detail::lbfgs_iter_state<scalar_t> curr_; // state at current step (function value, parameters, gradient)
-    mutable detail::lbfgs_iter_state<scalar_t> prev_; // previous step state 
-    mutable vector_t pf_;                             // past function values
-    mutable vector_t dir_;                            // step direction
-    mutable detail::lbfgs_memory<scalar_t>     lmem_; // limited memory
+    std::reference_wrapper<Functor const> functor_;  // the function to be minimized
+    mutable detail::lbfgs_iter_state<scalar_t> curr_;  // state at current step (function value, parameters, gradient)
+    mutable detail::lbfgs_iter_state<scalar_t> prev_;  // previous step state
+    mutable vector_t pf_;  // past function values
+    mutable vector_t dir_;  // step direction
+    mutable detail::lbfgs_memory<scalar_t> lmem_;  // limited memory
 };
 
 }  // namespace lbfgs

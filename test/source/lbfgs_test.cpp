@@ -7,8 +7,9 @@
 
 struct rosenbrock_function : public nano::function_t
 {
-    using scalar_t = nano::scalar_t;
-    using vector_t = Eigen::Matrix<scalar_t, -1, 1>;
+    using scalar_t = double;
+    using vector_t = Eigen::Matrix<double, -1, 1>;
+    using matrix_t = Eigen::Matrix<double, -1, -1>;
 
     explicit rosenbrock_function(int dim)
         : nano::function_t("rosenbrock", dim)

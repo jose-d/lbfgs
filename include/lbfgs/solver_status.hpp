@@ -19,6 +19,8 @@ struct solver_status
     solver_error error{};
     double initial_cost{};
     double final_cost{};
+    int iterations{};
+    int line_search_iterations{};
 };
 
 }  // namespace lbfgs

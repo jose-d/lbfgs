@@ -22,17 +22,13 @@ namespace outcome = outcome_v2;
 
 namespace detail
 {
-template<typename T>
-using vector_t = Eigen::Matrix<T, -1, 1>;
-
-template<typename T>
-using matrix_t = Eigen::Matrix<T, -1, -1>;
 
 template<typename T>
 struct lbfgs_iter_state
 {
     using scalar_t = T;
-    using vector_t = vector_t<T>;  // NOLINT
+    using vector_t = Eigen::Matrix<T, -1, 1>;
+    using matrix_t = Eigen::Matrix<T, -1, -1>;
 
     scalar_t f;  // function value
     vector_t x;  // parameters
@@ -78,8 +74,8 @@ struct lbfgs_iter_state
 template<typename T>
 struct lbfgs_memory
 {
-    using vector_t = vector_t<T>;  // NOLINT
-    using matrix_t = matrix_t<T>;
+    using vector_t = Eigen::Matrix<T, -1, 1>;
+    using matrix_t = Eigen::Matrix<T, -1, -1>;
 
     vector_t alpha;
     matrix_t s;

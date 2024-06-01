@@ -2,61 +2,68 @@
   description = "lbfgs";
 
   inputs = {
-    flake-utils.url = "github:numtide/flake-utils";
+    flake-parts.url = "github:hercules-ci/flake-parts";
     nixpkgs.url = "github:nixos/nixpkgs/master";
     foolnotion.url = "github:foolnotion/nur-pkg";
     foolnotion.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, flake-utils, nixpkgs, foolnotion }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = import nixpkgs {
-          inherit system;
-          overlays = [ foolnotion.overlay ];
+  outputs = inputs@{ self, flake-parts, nixpkgs, foolnotion }:
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      systems = [ "x86_64-linux" "x86_64-darwin" "aarch64-darwin" ];
+
+      perSystem = { pkgs, system, ... }:
+        let
+          pkgs = import nixpkgs {
+            inherit system;
+            overlays = [ foolnotion.overlay ];
+          };
+          stdenv = pkgs.llvmPackages_18.stdenv;
+        in
+        rec {
+          #_module.args.pkgs = pkgs;
+
+          packages.default = stdenv.mkDerivation {
+            name = "lbfgs";
+            src = self;
+
+            cmakeFlags = [
+              "-DCMAKE_BUILD_TYPE=Release"
+              "-DCMAKE_CXX_FLAGS=${
+                if pkgs.stdenv.hostPlatform.isx86_64 then "-march=x86-64" else ""
+              }"
+            ];
+            nativeBuildInputs = with pkgs; [ cmake ];
+
+            buildInputs = with pkgs; [
+              eigen
+              ned14-outcome
+              ned14-quickcpplib
+              ned14-status-code
+            ];
+          };
+
+          devShells.default = stdenv.mkDerivation {
+            name = "lbfgs dev";
+
+            nativeBuildInputs = packages.default.nativeBuildInputs ++ (with pkgs; [
+              clang-tools_18
+              cppcheck
+              include-what-you-use
+              cmake-language-server
+            ]);
+
+            buildInputs = packages.default.buildInputs ++ (with pkgs; [
+              gdb
+              linuxPackages_latest.perf
+              valgrind
+              libnano
+            ]);
+
+            shellHook = ''
+              alias bb="cmake --build build -j"
+            '';
+          };
         };
-        stdenv_ = pkgs.llvmPackages_16.stdenv;
-      in rec {
-        packages.default = stdenv_.mkDerivation {
-          name = "lbfgs";
-          src = self;
-
-          cmakeFlags = [
-            "-DCMAKE_BUILD_TYPE=Release"
-            "-DCMAKE_CXX_FLAGS=-march=x86-64-v3"
-          ];
-          nativeBuildInputs = with pkgs; [
-            cmake
-          ];
-
-          buildInputs = with pkgs; [
-            eigen
-            ned14-outcome
-            ned14-quickcpplib
-            ned14-status-code
-          ];
-        };
-
-        devShells.default = stdenv_.mkDerivation {
-          name = "lbfgs dev";
-
-          nativeBuildInputs = packages.default.nativeBuildInputs ++ (with pkgs; [
-            clang-tools_16
-            cppcheck
-            include-what-you-use
-            cmake-language-server
-          ]);
-
-          buildInputs = packages.default.buildInputs ++ (with pkgs; [
-            gdb
-            linuxPackages_latest.perf
-            valgrind
-            libnano
-          ]);
-
-          shellHook = ''
-            alias bb="cmake --build build -j"
-          '';
-        };
-      });
+    };
 }

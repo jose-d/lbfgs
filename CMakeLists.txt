@@ -25,6 +25,8 @@ set_property(
 
 find_package(Eigen3 REQUIRED NO_MODULE)
 find_package(outcome REQUIRED)
+find_package(status-code REQUIRED)
+
 if (outcome_FOUND)
     get_target_property(outcome_include_dir outcome::hl INTERFACE_INCLUDE_DIRECTORIES)
     message(STATUS "outcome found: ${outcome_include_dir}")

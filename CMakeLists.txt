@@ -32,6 +32,13 @@ if (outcome_FOUND)
     message(STATUS "outcome found: ${outcome_include_dir}")
 endif()
 
+if (status-code_FOUND)
+    get_target_property(status-code_include_dir status-code::hl INTERFACE_INCLUDE_DIRECTORIES)
+    message(STATUS "status-code found: ${status-code_include_dir}")
+endif()
+
+
+
 target_include_directories(
     lbfgs_lbfgs ${warning_guard}
     INTERFACE
